@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宾果找妈妈 · 学习左转右转</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;font-family:"Microsoft YaHei","PingFang SC","Helvetica Neue",sans-serif;user-select:none}
+
+  #app{
+    width:100vw;height:100vh;position:relative;
+    background:linear-gradient(180deg,#5DADE2 0%,#85C1E9 30%,#A9DFBF 50%,#82C46C 100%);
+    overflow:hidden;
+  }
+
+  /* 云朵 */
+  .cloud{position:absolute;background:rgba(255,255,255,.9);border-radius:50px;opacity:.7;animation:floatCloud linear infinite;pointer-events:none}
+  .cloud::before,.cloud::after{content:'';position:absolute;background:rgba(255,255,255,.9);border-radius:50%}
+  .cloud::before{width:60%;height:120%;top:-50%;left:15%}
+  .cloud::after{width:45%;height:100%;top:-35%;right:10%}
+  @keyframes floatCloud{from{transform:translateX(-200px)}to{transform:translateX(calc(100vw + 200px))}}
+
+  /* 蝴蝶 */
+  .butterfly{position:absolute;font-size:22px;pointer-events:none;z-index:3;animation:butterflyFly 12s ease-in-out infinite}
+  @keyframes butterflyFly{
+    0%{transform:translate(0,0) rotate(0deg)}
+    25%{transform:translate(80px,-40px) rotate(15deg)}
+    50%{transform:translate(160px,20px) rotate(-10deg)}
+    75%{transform:translate(80px,60px) rotate(20deg)}
+    100%{transform:translate(0,0) rotate(0deg)}
+  }
+
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .5s ease;z-index:10}
+  .screen.active{opacity:1;pointer-events:auto}
+
+  /* ===== 标题页 ===== */
+  #title-screen{gap:0}
+  .title-card{
+    background:rgba(255,255,255,.92);border-radius:28px;padding:36px 50px 32px;
+    box-shadow:0 12px 48px rgba(0,0,0,.18);text-align:center;max-width:580px;
+    animation:bounceIn .6s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes bounceIn{from{opacity:0;transform:scale(.7) translateY(40px)}to{opacity:1;transform:scale(1) translateY(0)}}
+  .title-icon{margin-bottom:4px;animation:bunnyHop 1.2s ease-in-out infinite;display:flex;justify-content:center}
+  .title-icon svg{width:80px;height:80px}
+  @keyframes bunnyHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  .title-card h1{font-size:38px;color:#E8731E;margin-bottom:4px;text-shadow:2px 2px 0 #FFE0B2}
+  .title-card .subtitle{font-size:17px;color:#888;margin-bottom:16px}
+
+  .story-box{
+    background:linear-gradient(135deg,#FFF9E6,#FFF3CC);border:2px dashed #FFB74D;
+    border-radius:16px;padding:14px 20px;margin-bottom:20px;text-align:left;
+  }
+  .story-box .story-title{font-size:15px;font-weight:700;color:#E8731E;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .story-box p{font-size:14px;color:#8B6914;line-height:1.6}
+
+  .scratch-ref{
+    background:linear-gradient(135deg,#FF9F43,#FF6B6B);border-radius:16px;padding:14px 20px;
+    margin-bottom:20px;display:flex;align-items:center;gap:16px;justify-content:center;
+  }
+  .scratch-ref .label{color:#fff;font-size:14px;font-weight:700;white-space:nowrap}
+  .scratch-blocks{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .sb{padding:8px 16px;border-radius:8px;font-size:14px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px;box-shadow:0 3px 0 rgba(0,0,0,.15)}
+  .sb-left{background:#4A90D9}
+  .sb-right{background:#5BB85B}
+  .sb-icon{font-size:18px}
+  .start-btn{
+    background:linear-gradient(135deg,#E8731E,#F5A623);color:#fff;border:none;
+    padding:16px 56px;font-size:22px;font-weight:700;border-radius:50px;
+    cursor:pointer;box-shadow:0 6px 0 #C85A0E,0 8px 20px rgba(232,115,30,.4);
+    transition:all .15s;font-family:inherit;
+  }
+  .start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 0 #C85A0E,0 10px 24px rgba(232,115,30,.5)}
+  .start-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #C85A0E,0 4px 12px rgba(232,115,30,.3)}
+  .info-btn{
+    background:rgba(255,255,255,.6);color:#666;border:2px solid rgba(255,255,255,.8);
+    padding:8px 24px;font-size:14px;border-radius:50px;cursor:pointer;margin-top:12px;font-family:inherit;
+  }
+  .info-btn:hover{background:rgba(255,255,255,.85)}
+
+  /* ===== 游戏页 ===== */
+  #game-screen{justify-content:flex-start;padding:10px 12px 6px}
+  .game-header{
+    width:100%;max-width:680px;display:flex;align-items:center;justify-content:space-between;
+    background:rgba(255,255,255,.85);border-radius:16px;padding:8px 18px;margin-bottom:8px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+  }
+  .level-badge{font-size:16px;font-weight:700;color:#E8731E;display:flex;align-items:center;gap:6px}
+  .stat-item{font-size:14px;color:#666;display:flex;align-items:center;gap:4px}
+  .stat-item span{font-weight:700;color:#333}
+  .header-btn{background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px}
+  .header-btn:hover{background:rgba(0,0,0,.06)}
+
+  /* 方向指南针 */
+  .compass{
+    display:flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,.7);border-radius:12px;padding:4px 12px;
+  }
+  .compass-label{font-size:12px;color:#888;font-weight:600;white-space:nowrap}
+  .compass-dial{
+    width:36px;height:36px;position:relative;border-radius:50%;
+    background:radial-gradient(circle,#fff,#f0f0f0);
+    border:2px solid #ddd;box-shadow:inset 0 1px 4px rgba(0,0,0,.08);
+  }
+  .compass-arrow{
+    position:absolute;top:50%;left:50%;width:0;height:0;
+    border-left:6px solid transparent;border-right:6px solid transparent;
+    border-bottom:14px solid #E8731E;
+    transform-origin:50% 100%;
+    transform:translate(-50%,-100%) rotate(0deg);
+    transition:transform .35s ease;
+    filter:drop-shadow(0 1px 2px rgba(232,115,30,.3));
+  }
+  .compass-dot{
+    position:absolute;top:50%;left:50%;width:5px;height:5px;
+    background:#333;border-radius:50%;transform:translate(-50%,-50%);
+  }
+  .compass-n{position:absolute;top:1px;left:50%;transform:translateX(-50%);font-size:8px;color:#999;font-weight:700}
+
+  .level-hint{
+    background:rgba(255,255,255,.9);border-radius:12px;padding:8px 18px;margin-bottom:8px;
+    font-size:15px;color:#555;text-align:center;max-width:680px;box-shadow:0 2px 8px rgba(0,0,0,.06);
+    display:flex;align-items:center;gap:8px;justify-content:center;
+  }
+  .level-hint .hint-icon{font-size:20px}
+
+  .board-wrapper{
+    background:rgba(255,255,255,.5);border-radius:20px;padding:12px;
+    box-shadow:0 6px 24px rgba(0,0,0,.1);position:relative;
+  }
+  .board{
+    display:grid;gap:2px;background:#82C46C;border-radius:12px;padding:4px;
+    position:relative;
+  }
+  .cell{
+    width:62px;height:62px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-size:34px;position:relative;transition:background .3s;
+  }
+  .cell.grass{background:linear-gradient(135deg,#9ACD68,#86Bf52)}
+  .cell.path{background:linear-gradient(135deg,#F5E6CA,#E8D5A8)}
+  .cell.wall{background:linear-gradient(135deg,#558B2F,#33691E);font-size:36px}
+  .cell.goal{background:linear-gradient(135deg,#FFCC80,#FFB74D)}
+  .cell.star-cell{background:linear-gradient(135deg,#9ACD68,#86BF52)}
+
+  .deco{position:absolute;font-size:18px;opacity:.5;pointer-events:none;animation:sway 3s ease-in-out infinite}
+  @keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+
+  /* 宾果角色 */
+  #bunny{
+    position:absolute;width:58px;height:58px;
+    transition:left .4s cubic-bezier(.34,1.2,.64,1),top .4s cubic-bezier(.34,1.2,.64,1),transform .35s ease;
+    z-index:20;pointer-events:none;
+  }
+  #bunny svg{width:100%;height:100%;filter:drop-shadow(0 3px 6px rgba(0,0,0,.2))}
+
+  .speech-bubble{
+    position:absolute;background:#fff;border-radius:16px;padding:6px 14px;
+    font-size:13px;font-weight:700;color:#E8731E;white-space:nowrap;
+    box-shadow:0 3px 10px rgba(0,0,0,.15);z-index:25;pointer-events:none;
+    animation:bubblePop .3s ease;
+  }
+  .speech-bubble::after{
+    content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
+    width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;
+    border-top:8px solid #fff;
+  }
+  @keyframes bubblePop{from{transform:scale(0) translateY(10px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+
+  .trail{position:absolute;width:36px;height:36px;border-radius:50%;background:rgba(255,235,59,.35);z-index:5;pointer-events:none;animation:trailFade .5s ease}
+  @keyframes trailFade{from{transform:scale(.5);opacity:.6}to{transform:scale(1);opacity:.35}}
+
+  .encourage{
+    position:absolute;font-size:24px;font-weight:800;z-index:30;pointer-events:none;
+    animation:encourageFly 1.2s ease-out forwards;
+  }
+  @keyframes encourageFly{
+    0%{transform:translateY(0) scale(.5);opacity:0}
+    20%{transform:translateY(-10px) scale(1.2);opacity:1}
+    100%{transform:translateY(-60px) scale(1);opacity:0}
+  }
+
+  .controls{display:flex;gap:16px;margin-top:12px;align-items:center;justify-content:center}
+  .ctrl-btn{
+    width:88px;height:88px;border:none;border-radius:24px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    font-size:15px;font-weight:700;color:#fff;font-family:inherit;
+    box-shadow:0 6px 0 rgba(0,0,0,.2),0 8px 16px rgba(0,0,0,.15);
+    transition:all .12s;position:relative;
+  }
+  .ctrl-btn:disabled{opacity:.4;cursor:not-allowed}
+  .ctrl-btn:not(:disabled):hover{transform:translateY(-2px)}
+  .ctrl-btn:not(:disabled):active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.2),0 4px 8px rgba(0,0,0,.1)}
+  .ctrl-btn .btn-icon{font-size:30px}
+  .btn-left{background:linear-gradient(135deg,#4A90D9,#357AbD)}
+  .btn-left:not(:disabled):active{box-shadow:0 2px 0 #2A5F8E,0 4px 8px rgba(0,0,0,.1)}
+  .btn-right{background:linear-gradient(135deg,#5BB85B,#3D9B3D)}
+  .btn-right:not(:disabled):active{box-shadow:0 2px 0 #2D7B2D,0 4px 8px rgba(0,0,0,.1)}
+  .btn-forward{background:linear-gradient(135deg,#FF9F43,#E8791E)}
+  .btn-forward:not(:disabled):active{box-shadow:0 2px 0 #B85A0E,0 4px 8px rgba(0,0,0,.1)}
+
+  .btn-hint{
+    font-size:11px;color:#666;text-align:center;margin-top:4px;
+    min-height:16px;font-weight:600;line-height:1.2;
+  }
+  .btn-hint .arrow{font-size:14px;font-weight:800}
+  .btn-hint .dir-name{display:block;font-size:10px;color:#999}
+
+  .help-btn{
+    background:linear-gradient(135deg,#A78BFA,#8B5CF6);color:#fff;border:none;
+    padding:8px 18px;font-size:14px;font-weight:700;border-radius:50px;cursor:pointer;
+    box-shadow:0 4px 0 #7C3AED;font-family:inherit;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .help-btn:hover{transform:translateY(-1px)}
+  .help-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #7C3AED}
+
+  .action-row{display:flex;gap:10px;margin-top:8px;align-items:center;justify-content:center}
+
+  .reset-btn{
+    background:rgba(255,255,255,.8);border:2px solid rgba(0,0,0,.08);
+    padding:8px 16px;font-size:14px;border-radius:50px;cursor:pointer;
+    color:#888;font-family:inherit;font-weight:600;
+  }
+  .reset-btn:hover{background:#fff;color:#555}
+
+  /* ===== 胜利页 ===== */
+  #win-screen{gap:16px}
+  .win-card{
+    background:rgba(255,255,255,.95);border-radius:28px;padding:36px 50px;text-align:center;
+    box-shadow:0 12px 48px rgba(0,0,0,.2);animation:bounceIn .5s cubic-bezier(.34,1.56,.64,1);
+    max-width:480px;
+  }
+  .win-card .trophy{font-size:60px;margin-bottom:4px;animation:trophyBounce .8s ease-in-out infinite}
+  @keyframes trophyBounce{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}}
+  .win-card h2{font-size:30px;color:#E8731E;margin-bottom:6px}
+
+  .star-rating{display:flex;gap:8px;justify-content:center;margin:12px 0 16px}
+  .star-rating .rate-star{font-size:40px;opacity:.25;transition:all .4s}
+  .star-rating .rate-star.earned{opacity:1;animation:starPop .5s ease}
+  @keyframes starPop{0%{transform:scale(0) rotate(-180deg)}60%{transform:scale(1.3) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
+
+  .win-msg{font-size:16px;color:#888;margin-bottom:16px}
+  .win-stats{display:flex;gap:24px;justify-content:center;margin-bottom:20px}
+  .win-stat{text-align:center}
+  .win-stat .val{font-size:26px;font-weight:800;color:#FF9F43}
+  .win-stat .lbl{font-size:13px;color:#999;margin-top:2px}
+
+  .stickers{display:flex;gap:8px;justify-content:center;margin-bottom:20px;flex-wrap:wrap}
+  .sticker{font-size:28px;animation:bounceIn .4s ease}
+
+  .next-btn{
+    background:linear-gradient(135deg,#5BB85B,#3D9B3D);color:#fff;border:none;
+    padding:14px 44px;font-size:20px;font-weight:700;border-radius:50px;cursor:pointer;
+    box-shadow:0 6px 0 #2D7B2D,0 8px 20px rgba(91,184,91,.4);transition:all .15s;font-family:inherit;
+  }
+  .next-btn:hover{transform:translateY(-2px)}
+  .next-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #2D7B2D}
+
+  .confetti{position:absolute;width:8px;height:8px;animation:confettiFall 3s linear infinite;pointer-events:none;z-index:5}
+  @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+  .rainbow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;pointer-events:none;z-index:4;opacity:0;animation:rainbowShow 2s ease}
+  @keyframes rainbowShow{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}50%{opacity:.4}100%{opacity:0;transform:translate(-50%,-50%) scale(1.5)}}
+
+  /* 教程引导层 */
+  .tutorial-overlay{
+    position:fixed;inset:0;z-index:90;display:none;
+  }
+  .tutorial-overlay.active{display:block}
+  .tutorial-mask{
+    position:absolute;inset:0;background:rgba(0,0,0,.4);
+  }
+  .tutorial-box{
+    position:absolute;background:#fff;border-radius:16px;padding:16px 22px;
+    max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.25);
+    animation:bounceIn .3s ease;
+  }
+  .tutorial-box .tut-icon{font-size:32px;margin-bottom:6px;display:flex;justify-content:center}
+  .tutorial-box .tut-icon svg{width:50px;height:50px}
+  .tutorial-box .tut-title{font-size:16px;font-weight:700;color:#E8731E;margin-bottom:4px;text-align:center}
+  .tutorial-box .tut-text{font-size:14px;color:#666;line-height:1.6;text-align:center}
+  .tutorial-box .tut-text b{color:#E8731E}
+  .tutorial-box .tut-btn{
+    background:linear-gradient(135deg,#E8731E,#F5A623);color:#fff;border:none;
+    padding:8px 24px;font-size:14px;font-weight:700;border-radius:50px;cursor:pointer;
+    margin-top:10px;font-family:inherit;width:100%;
+  }
+
+  /* 智能提示 */
+  .smart-hint{
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:#fff;border-radius:20px;padding:24px 32px;max-width:380px;
+    box-shadow:0 12px 48px rgba(0,0,0,.25);z-index:95;
+    text-align:center;animation:bounceIn .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .smart-hint .sh-icon{font-size:40px;margin-bottom:8px;display:flex;justify-content:center}
+  .smart-hint .sh-icon svg{width:60px;height:60px}
+  .smart-hint .sh-title{font-size:18px;font-weight:700;color:#E8731E;margin-bottom:8px}
+  .smart-hint .sh-text{font-size:15px;color:#666;line-height:1.7}
+  .smart-hint .sh-text b{color:#4A90D9}
+  .smart-hint .sh-close{
+    background:#E8731E;color:#fff;border:none;padding:8px 28px;
+    border-radius:50px;font-size:14px;cursor:pointer;margin-top:14px;font-family:inherit;font-weight:700;
+  }
+
+  /* 弹窗 */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100;animation:fadeIn .3s}
+  .modal-overlay.show{display:flex}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal{
+    background:#fff;border-radius:20px;padding:32px 36px;max-width:560px;max-height:80vh;
+    overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.3);animation:slideUp .4s ease;
+  }
+  @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .modal h2{color:#E8731E;margin-bottom:16px;font-size:24px}
+  .modal h3{color:#4A90D9;margin:16px 0 8px;font-size:17px}
+  .modal p{color:#555;font-size:14px;line-height:1.7;margin-bottom:8px}
+  .modal ul{margin-left:20px;margin-bottom:12px}
+  .modal li{color:#666;font-size:14px;line-height:1.8}
+  .modal .close-btn{background:#E8731E;color:#fff;border:none;padding:10px 32px;border-radius:50px;font-size:16px;cursor:pointer;font-family:inherit;margin-top:16px;width:100%;font-weight:700}
+  .modal .close-btn:hover{background:#C85A0E}
+
+  @media (max-width:480px){
+    .cell{width:48px;height:48px;font-size:26px}
+    #bunny{width:44px;height:44px}
+    .ctrl-btn{width:72px;height:72px;font-size:13px}
+    .ctrl-btn .btn-icon{font-size:24px}
+    .title-card{padding:28px 22px 26px}
+    .title-card h1{font-size:28px}
+    .game-header{padding:6px 12px}
+    .level-badge{font-size:14px}
+    .stat-item{font-size:12px}
+    .story-box p{font-size:13px}
+    .compass-label{display:none}
+    .compass-dial{width:30px;height:30px}
+    .btn-hint{font-size:10px}
+    .btn-hint .dir-name{font-size:9px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="cloud" style="width:100px;height:30px;top:8%;animation-duration:25s"></div>
+  <div class="cloud" style="width:80px;height:24px;top:18%;animation-duration:30s;animation-delay:-8s"></div>
+  <div class="cloud" style="width:120px;height:35px;top:5%;animation-duration:35s;animation-delay:-15s"></div>
+  <div class="butterfly" style="left:15%;top:35%;animation-delay:0s">🦋</div>
+  <div class="butterfly" style="left:75%;top:28%;animation-delay:-4s">🦋</div>
+
+  <!-- ===== 标题页 ===== -->
+  <div id="title-screen" class="screen active">
+    <div class="title-card">
+      <div class="title-icon" id="title-bingo"></div>
+      <h1>宾果找妈妈</h1>
+      <p class="subtitle">帮助小狗宾果找到妈妈，学会「左转」和「右转」！</p>
+      <div class="story-box">
+        <div class="story-title">📖 故事开始</div>
+        <p>在一个阳光明媚的早晨，小狗宾果在花园里玩耍。<br>玩着玩着，宾果发现——咦？妈妈在哪里呢？<br>妈妈一定在花园的某处等着她！<br>小朋友，你能帮宾果学会<b>左转</b>和<b>右转</b>，一起找到妈妈吗？</p>
+      </div>
+      <div class="scratch-ref">
+        <span class="label">Scratch 代码块：</span>
+        <div class="scratch-blocks">
+          <div class="sb sb-left"><span class="sb-icon">↺</span>左转</div>
+          <div class="sb sb-right"><span class="sb-icon">↻</span>右转</div>
+        </div>
+      </div>
+      <button class="start-btn" onclick="startGame()">开始冒险</button>
+      <br>
+      <button class="info-btn" onclick="showModal()">设计说明</button>
+    </div>
+  </div>
+
+  <!-- ===== 游戏页 ===== -->
+  <div id="game-screen" class="screen">
+    <div class="game-header">
+      <div class="level-badge">🎯 <span id="level-title">第一关</span></div>
+      <div class="compass">
+        <span class="compass-label">朝向</span>
+        <div class="compass-dial">
+          <span class="compass-n">N</span>
+          <div class="compass-arrow" id="compass-arrow"></div>
+          <div class="compass-dot"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center">
+        <div class="stat-item">👣 <span id="move-count">0</span></div>
+        <div class="stat-item">🎾 <span id="star-count">0/0</span></div>
+        <button class="header-btn" onclick="goHome()" title="返回主页">🏠</button>
+      </div>
+    </div>
+    <div class="level-hint">
+      <span class="hint-icon">💡</span>
+      <span id="hint-text"></span>
+    </div>
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+    </div>
+    <div class="controls">
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <button class="ctrl-btn btn-left" id="btn-left" onclick="doTurn('left')">
+          <span class="btn-icon">↺</span>
+          <span>左转</span>
+        </button>
+        <div class="btn-hint" id="hint-left"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <button class="ctrl-btn btn-forward" id="btn-forward" onclick="doForward()">
+          <span class="btn-icon">⬆️</span>
+          <span>前进</span>
+        </button>
+        <div class="btn-hint" id="hint-forward"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <button class="ctrl-btn btn-right" id="btn-right" onclick="doTurn('right')">
+          <span class="btn-icon">↻</span>
+          <span>右转</span>
+        </button>
+        <div class="btn-hint" id="hint-right"></div>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="reset-btn" onclick="loadLevel(currentLevel)">🔄 重来</button>
+      <button class="help-btn" onclick="showSmartHint()">💡 需要帮助</button>
+    </div>
+  </div>
+
+  <!-- ===== 胜利页 ===== -->
+  <div id="win-screen" class="screen">
+    <div class="win-card">
+      <div class="trophy">🎉</div>
+      <h2 id="win-title">太棒了！</h2>
+      <div class="star-rating" id="star-rating">
+        <span class="rate-star">⭐</span>
+        <span class="rate-star">⭐</span>
+        <span class="rate-star">⭐</span>
+      </div>
+      <p class="win-msg" id="win-msg">宾果找到妈妈啦！</p>
+      <div class="win-stats">
+        <div class="win-stat"><div class="val" id="win-moves">0</div><div class="lbl">步数</div></div>
+        <div class="win-stat"><div class="val" id="win-stars">0</div><div class="lbl">网球</div></div>
+      </div>
+      <div class="stickers" id="stickers"></div>
+      <button class="next-btn" id="next-btn" onclick="nextLevel()">下一关 →</button>
+    </div>
+  </div>
+
+  <!-- ===== 教程引导层 ===== -->
+  <div class="tutorial-overlay" id="tutorial-overlay">
+    <div class="tutorial-mask"></div>
+    <div class="tutorial-box" id="tutorial-box">
+      <div class="tut-icon" id="tut-icon">🐶</div>
+      <div class="tut-title" id="tut-title">欢迎来到冒险！</div>
+      <div class="tut-text" id="tut-text"></div>
+      <button class="tut-btn" id="tut-btn" onclick="nextTutorialStep()">知道了！</button>
+    </div>
+  </div>
+
+  <!-- ===== 设计说明弹窗 ===== -->
+  <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)hideModal()">
+    <div class="modal">
+      <h2>🐶 宾果找妈妈 · 设计说明</h2>
+      <h3>游戏目标</h3>
+      <p>帮助小学一二年级学生在游戏中理解 Scratch 的「左转」「右转」代码块，通过控制小狗宾果的转向找到妈妈。</p>
+      <h3>角色与场景</h3>
+      <ul>
+        <li>主角：<b>宾果 (Bingo)</b> —— 来自动画片《布鲁伊》，5岁的红色澳洲牧牛犬</li>
+        <li>终点目标：<b>妈妈 (Chilli)</b> —— 宾果的妈妈，在花园里等着宾果</li>
+        <li>场景：澳大利亚布里斯班郊区家庭花园，绿草地、树篱笆、蝴蝶飞舞</li>
+        <li>收集物：🎾 网球（布鲁伊和宾果最爱玩的玩具）</li>
+      </ul>
+      <h3>教育设计</h3>
+      <ul>
+        <li><b>第1关</b>：认识右转 —— 宾果朝上，需要右转后前进</li>
+        <li><b>第2关</b>：认识左转 —— 宾果朝下，需要左转后前进</li>
+        <li><b>第3关</b>：转弯组合 —— 综合使用左转和右转</li>
+        <li><b>第4关</b>：收集网球 —— 在路径上增加收集要素</li>
+        <li><b>第5关</b>：花园迷宫 —— 树篱笆挡路，复杂路径规划</li>
+      </ul>
+      <h3>与 Scratch 的对应关系</h3>
+      <ul>
+        <li>游戏中的「左转」= Scratch 中 <b>左转 ↻ (90) 度</b></li>
+        <li>游戏中的「右转」= Scratch 中 <b>右转 ↺ (90) 度</b></li>
+        <li>游戏中的「前进」= Scratch 中 <b>移动 (60) 步</b>（一个格子宽度）</li>
+      </ul>
+      <h3>引导提示系统</h3>
+      <ul>
+        <li><b>方向指南针</b>：顶部实时显示宾果的朝向，橙色箭头随转弯旋转</li>
+        <li><b>按钮提示标签</b>：每个按钮下方显示「转后→朝右」，让孩子预知操作结果</li>
+        <li><b>新手教程</b>：第一关自动弹出3步教程，介绍耳朵朝向、指南针和右转操作</li>
+        <li><b>智能帮助</b>：点击「需要帮助」按钮，根据当前位置智能提示该左转还是右转</li>
+        <li><b>说话气泡</b>：宾果在不同情境下说话，提示下一步操作</li>
+      </ul>
+      <button class="close-btn" onclick="hideModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== 宾果 SVG 表情系统 =====
+// 宾果：红色澳洲牧牛犬，还原Bluey动画片方块化几何画风
+// 杏黄色主毛(#E8B07D) + 奶油白(#F5E6D3)嘴巴/眉毛/额头条纹 + 深橙(#C77E3A)斑点/外耳 + 棕色鼻子
+// 参考: Blueypedia Bingo Heeler - Apricot main, Warm Light cream, Spiced Up Orange spots
+const BINGO_SVGS = {
+  normal: `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 13 20 L 7 3 L 22 14 Z" fill="#C77E3A" stroke="#A8651E" stroke-width="1"/>
+    <path d="M 14 18 L 10 7 L 19 14 Z" fill="#E8B07D"/>
+    <path d="M 47 20 L 53 3 L 38 14 Z" fill="#C77E3A" stroke="#A8651E" stroke-width="1"/>
+    <path d="M 46 18 L 50 7 L 41 14 Z" fill="#E8B07D"/>
+    <rect x="10" y="12" width="40" height="38" rx="14" ry="12" fill="#E8B07D" stroke="#C9925A" stroke-width="1.5"/>
+    <rect x="27" y="12" width="6" height="20" rx="3" fill="#F5E6D3"/>
+    <path d="M 11 22 Q 9 29 13 33 Q 19 31 20 24 Q 17 19 11 22 Z" fill="#C77E3A" opacity="0.75"/>
+    <path d="M 49 22 Q 51 29 47 33 Q 41 31 40 24 Q 43 19 49 22 Z" fill="#C77E3A" opacity="0.75"/>
+    <ellipse cx="30" cy="40" rx="14" ry="10" fill="#F5E6D3"/>
+    <ellipse cx="22" cy="27" rx="3.5" ry="2" fill="#F5E6D3" transform="rotate(-15 22 27)"/>
+    <ellipse cx="38" cy="27" rx="3.5" ry="2" fill="#F5E6D3" transform="rotate(15 38 27)"/>
+    <circle cx="23" cy="32" r="3" fill="#1a1a1a"/>
+    <circle cx="37" cy="32" r="3" fill="#1a1a1a"/>
+    <circle cx="24" cy="31" r="1" fill="#fff"/>
+    <circle cx="38" cy="31" r="1" fill="#fff"/>
+    <ellipse cx="30" cy="38" rx="2.5" ry="2" fill="#7B5E3B"/>
+    <path d="M 30 40 L 30 42 M 30 42 Q 27 44 25 42.5 M 30 42 Q 33 44 35 42.5" stroke="#888" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="15" cy="38" r="2.5" fill="#FF9988" opacity="0.2"/>
+    <circle cx="45" cy="38" r="2.5" fill="#FF9988" opacity="0.2"/>
+  </svg>`,
+  happy: `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 13 20 L 7 3 L 22 14 Z" fill="#C77E3A" stroke="#A8651E" stroke-width="1"/>
+    <path d="M 14 18 L 10 7 L 19 14 Z" fill="#E8B07D"/>
+    <path d="M 47 20 L 53 3 L 38 14 Z" fill="#C77E3A" stroke="#A8651E" stroke-width="1"/>
+    <path d="M 46 18 L 50 7 L 41 14 Z" fill="#E8B07D"/>
+    <rect x="10" y="12" width="40" height="38" rx="14" ry="12" fill="#E8B07D" stroke="#C9925A" stroke-width="1.5"/>
+    <rect x="27" y="12" width="6" height="20" rx="3" fill="#F5E6D3"/>
+    <path d="M 11 22 Q 9 29 13 33 Q 19 31 20 24 Q 17 19 11 22 Z" fill="#C77E3A" opacity="0.75"/>
+    <path d="M 49 22 Q 51 29 47 33 Q 41 31 40 24 Q 43 19 49 22 Z" fill="#C77E3A" opacity="0.75"/>
+    <ellipse cx="30" cy="40" rx="14" ry="10" fill="#F5E6D3"/>
+    <ellipse cx="22" cy="27" rx="3.5" ry="2" fill="#F5E6D3" transform="rotate(-15 22 27)"/>
+    <ellipse cx="38" cy="27" rx="3.5" ry="2" fill="#F5E6D3" transform="rotate(15 38 27)"/>
+    <path d="M 19 32 Q 23 28 27 32" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M 33 32 Q 37 28 41 32" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="30" cy="38" rx="2.5" ry="2" fill="#7B5E3B"/>
+    <path d="M 24 41 Q 30 47 36 41" stroke="#888" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <circle cx="15" cy="38" r="3.5" fill="#FF7B6B" opacity="0.3"/>
+    <circle cx="45" cy="38" r="3.5" fill="#FF7B6B" opacity="0.3"/>
+  </svg>`,
+  dizzy: `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 13 20 L 7 3 L 22 14 Z" fill="#C77E3A" stroke="#A8651E" stroke-width="1"/>
+    <path d="M 14 18 L 10 7 L 19 14 Z" fill="#E8B07D"/>
+    <path d="M 47 20 L 53 3 L 38 14 Z" fill="#C77E3A" stroke="#A8651E" stroke-width="1"/>
+    <path d="M 46 18 L 50 7 L 41 14 Z" fill="#E8B07D"/>
+    <rect x="10" y="12" width="40" height="38" rx="14" ry="12" fill="#E8B07D" stroke="#C9925A" stroke-width="1.5"/>
+    <rect x="27" y="12" width="6" height="20" rx="3" fill="#F5E6D3"/>
+    <path d="M 11 22 Q 9 29 13 33 Q 19 31 20 24 Q 17 19 11 22 Z" fill="#C77E3A" opacity="0.75"/>
+    <path d="M 49 22 Q 51 29 47 33 Q 41 31 40 24 Q 43 19 49 22 Z" fill="#C77E3A" opacity="0.75"/>
+    <ellipse cx="30" cy="40" rx="14" ry="10" fill="#F5E6D3"/>
+    <ellipse cx="22" cy="27" rx="3.5" ry="2" fill="#F5E6D3" transform="rotate(-15 22 27)"/>
+    <ellipse cx="38" cy="27" rx="3.5" ry="2" fill="#F5E6D3" transform="rotate(15 38 27)"/>
+    <path d="M 19 30 L 27 36 M 27 30 L 19 36" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M 33 30 L 41 36 M 41 30 L 33 36" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
+    <ellipse cx="30" cy="38" rx="2.5" ry="2" fill="#7B5E3B"/>
+    <path d="M 25 43 Q 30 39 35 43" stroke="#888" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <circle cx="15" cy="38" r="2.5" fill="#FF9988" opacity="0.15"/>
+    <circle cx="45" cy="38" r="2.5" fill="#FF9988" opacity="0.15"/>
+  </svg>`,
+  surprised: `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 13 20 L 7 3 L 22 14 Z" fill="#C77E3A" stroke="#A8651E" stroke-width="1"/>
+    <path d="M 14 18 L 10 7 L 19 14 Z" fill="#E8B07D"/>
+    <path d="M 47 20 L 53 3 L 38 14 Z" fill="#C77E3A" stroke="#A8651E" stroke-width="1"/>
+    <path d="M 46 18 L 50 7 L 41 14 Z" fill="#E8B07D"/>
+    <rect x="10" y="12" width="40" height="38" rx="14" ry="12" fill="#E8B07D" stroke="#C9925A" stroke-width="1.5"/>
+    <rect x="27" y="12" width="6" height="20" rx="3" fill="#F5E6D3"/>
+    <path d="M 11 22 Q 9 29 13 33 Q 19 31 20 24 Q 17 19 11 22 Z" fill="#C77E3A" opacity="0.75"/>
+    <path d="M 49 22 Q 51 29 47 33 Q 41 31 40 24 Q 43 19 49 22 Z" fill="#C77E3A" opacity="0.75"/>
+    <ellipse cx="30" cy="40" rx="14" ry="10" fill="#F5E6D3"/>
+    <ellipse cx="22" cy="27" rx="3.5" ry="2" fill="#F5E6D3" transform="rotate(-15 22 27)"/>
+    <ellipse cx="38" cy="27" rx="3.5" ry="2" fill="#F5E6D3" transform="rotate(15 38 27)"/>
+    <circle cx="23" cy="31" r="4" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
+    <circle cx="37" cy="31" r="4" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
+    <circle cx="23" cy="31" r="1.8" fill="#1a1a1a"/>
+    <circle cx="37" cy="31" r="1.8" fill="#1a1a1a"/>
+    <ellipse cx="30" cy="38" rx="2.5" ry="2" fill="#7B5E3B"/>
+    <ellipse cx="30" cy="43" rx="3.5" ry="3" fill="#7B5E3B"/>
+    <circle cx="15" cy="38" r="3" fill="#FF9988" opacity="0.3"/>
+    <circle cx="45" cy="38" r="3" fill="#FF9988" opacity="0.3"/>
+  </svg>`
+};
+
+// 妈妈奇莉 SVG (终点角色) — 红色牧牛犬，体型稍大，温柔表情
+// 参考: Blueypedia Chilli Heeler - Apricot main, Gingerbread Crumble brown right head spot/outer ears, Sunbathed Beach inner ears
+const MUM_SVG = `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <path d="M 13 22 L 7 5 L 23 16 Z" fill="#8B6B3D" stroke="#6B4F25" stroke-width="1"/>
+  <path d="M 14 20 L 10 9 L 20 16 Z" fill="#D4A76A"/>
+  <path d="M 47 22 L 53 5 L 37 16 Z" fill="#8B6B3D" stroke="#6B4F25" stroke-width="1"/>
+  <path d="M 46 20 L 50 9 L 40 16 Z" fill="#D4A76A"/>
+  <rect x="10" y="13" width="40" height="39" rx="14" ry="12" fill="#E8B07D" stroke="#C9925A" stroke-width="1.5"/>
+  <rect x="27" y="13" width="6" height="20" rx="3" fill="#F5E6D3"/>
+  <path d="M 40 20 Q 49 22 50 30 Q 49 36 41 34 Q 38 28 40 20 Z" fill="#8B6B3D" opacity="0.75"/>
+  <path d="M 11 24 Q 9 31 14 34 Q 19 31 19 25 Q 16 20 11 24 Z" fill="#D4A76A" opacity="0.55"/>
+  <ellipse cx="30" cy="41" rx="15" ry="11" fill="#F5E6D3"/>
+  <ellipse cx="22" cy="27" rx="3.5" ry="2" fill="#F5E6D3" transform="rotate(-15 22 27)"/>
+  <ellipse cx="38" cy="27" rx="3.5" ry="2" fill="#F5E6D3" transform="rotate(15 38 27)"/>
+  <path d="M 19 32 Q 23 29 27 32" stroke="#1a1a1a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M 33 32 Q 37 29 41 32" stroke="#1a1a1a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <ellipse cx="30" cy="38" rx="2.5" ry="2" fill="#7B5E3B"/>
+  <path d="M 25 42 Q 30 46 35 42" stroke="#888" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <text x="30" y="8" text-anchor="middle" font-size="13">💕</text>
+</svg>`;
+
+// ===== 关卡数据 =====
+// dir: 0=上, 1=右, 2=下, 3=左
+// 格子类型: 0=草地, 1=树篱笆(墙)
+const LEVELS = [
+  {
+    title: "第一关 · 认识右转",
+    grid: [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]],
+    start: {x:0, y:1, dir:0},
+    goal: {x:4, y:1},
+    stars: [],
+    optimalMoves: 5,
+    hint: "宾果朝上看，妈妈在右边。按下【右转】按钮，再按【前进】吧！",
+    bingoSay: "咦？妈妈在哪里呢？",
+    decoType: "garden"
+  },
+  {
+    title: "第二关 · 认识左转",
+    grid: [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]],
+    start: {x:0, y:1, dir:2},
+    goal: {x:4, y:1},
+    stars: [],
+    optimalMoves: 5,
+    hint: "宾果朝下看，妈妈在右边。这次需要按【左转】哦！",
+    bingoSay: "我看不到妈妈...",
+    decoType: "garden"
+  },
+  {
+    title: "第三关 · 左右组合",
+    grid: [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]],
+    start: {x:0, y:1, dir:0},
+    goal: {x:4, y:3},
+    stars: [],
+    optimalMoves: 7,
+    hint: "妈妈在右下方！先右转走过去，再转弯到下面。加油～",
+    bingoSay: "好远呀！我能做到！",
+    decoType: "garden"
+  },
+  {
+    title: "第四关 · 收集网球",
+    grid: [[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],
+    start: {x:0, y:0, dir:2},
+    goal: {x:5, y:3},
+    stars: [{x:2,y:1},{x:4,y:0}],
+    optimalMoves: 12,
+    hint: "花园里有网球！转弯去收集它们，再找到妈妈吧！",
+    bingoSay: "哇！网球！我最爱玩了！",
+    decoType: "toys"
+  },
+  {
+    title: "第五关 · 花园迷宫",
+    grid: [
+      [0,0,1,0,0,0,0],
+      [0,0,1,0,1,1,0],
+      [0,0,0,0,0,1,0],
+      [0,1,1,1,0,0,0],
+      [0,0,0,0,0,1,0]
+    ],
+    start: {x:0, y:0, dir:1},
+    goal: {x:6, y:4},
+    stars: [{x:0,y:4},{x:6,y:0}],
+    optimalMoves: 20,
+    hint: "树篱笆迷宫！小心别撞到。收集所有网球后找到妈妈。这是最终挑战！",
+    bingoSay: "花园好像迷宫！我不怕！",
+    decoType: "forest"
+  }
+];
+
+// ===== 游戏状态 =====
+let currentLevel = 0;
+let bunny = {x:0, y:0, dir:0};
+let moves = 0;
+let starsCollected = 0;
+let totalStars = 0;
+let isAnimating = false;
+let cellSize = 62;
+let trailCells = [];
+let bunnyMood = 'normal';
+
+// ===== 音效系统 =====
+let audioCtx = null;
+function initAudio(){
+  if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+}
+function playTone(freq, duration, type='sine', volume=0.15){
+  if(!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = type; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.start(); osc.stop(audioCtx.currentTime + duration);
+}
+function playTurn(){ playTone(440,0.15,'triangle',0.12); setTimeout(()=>playTone(330,0.1,'triangle',0.1),80); }
+function playStep(){ playTone(523,0.08,'sine',0.1); }
+function playStar(){ playTone(659,0.1,'sine',0.15); setTimeout(()=>playTone(880,0.15,'sine',0.15),80); setTimeout(()=>playTone(1047,0.1,'sine',0.12),160); }
+function playWin(){ [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>playTone(f,0.25,'sine',0.15),i*100)); }
+function playBump(){ playTone(150,0.15,'sawtooth',0.12); }
+function playEncourage(){ playTone(784,0.08,'sine',0.1); setTimeout(()=>playTone(988,0.1,'sine',0.1),60); }
+
+// ===== 鼓励语 =====
+const ENCOURAGES = ['好棒！','加油！','真聪明！','继续！','太厉害了！','你能行！','哇塞！'];
+const TURN_SAYS = ['转弯啦！','我转方向了！','换个方向！'];
+const BUMP_SAYS = ['哎呀！','砰！撞到篱笆了！','走不通呢...','换个方向试试？'];
+const STAR_SAYS = ['网球！耶！','收集到网球啦！','我最爱网球了！','再来一个！'];
+
+// ===== 装饰物 =====
+const DECO_EMOJIS = {
+  garden: ['🌸','🌼','🌺','🌷','🌻'],
+  toys: ['🎾','🦴','🌸','🌼','🧶','🌺'],
+  forest: ['🌿','🌸','🍄','🌼','🍃','🌺']
+};
+
+// ===== 方向名称 =====
+const DIR_NAMES = ['上','右','下','左'];
+const DIR_ARROWS = ['⬆️','➡️','⬇️','⬅️'];
+const DIR_DESC = ['朝上','朝右','朝下','朝左'];
+
+// ===== 教程步骤 =====
+const TUTORIAL_STEPS = [
+  {
+    icon: 'svg',
+    title: '欢迎来到冒险！',
+    text: '你好！我是小狗<b>宾果</b>。<br>我的<b>耳朵</b>指的方向就是我面朝的方向哦！',
+    btnText: '继续'
+  },
+  {
+    icon: '🧭',
+    title: '认识方向指南针',
+    text: '看上面的<b>指南针</b>！橙色箭头指向的就是宾果现在的朝向。<br>宾果现在朝<b>上</b>看 ⬆️',
+    btnText: '我知道了'
+  },
+  {
+    icon: '↻',
+    title: '试试右转！',
+    text: '按<b>【右转】</b>按钮，宾果会向右转90度。<br>朝上 ⬆️ 右转后 → 朝右 ➡️<br>看看按钮下面的提示，它会告诉你转完后朝哪里！',
+    btnText: '开始游戏！'
+  }
+];
+let tutorialStep = 0;
+
+// ===== 屏幕切换 =====
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startGame(){
+  initAudio();
+  currentLevel = 0;
+  loadLevel(0);
+  showScreen('game-screen');
+}
+
+function goHome(){ showScreen('title-screen'); }
+
+// ===== 更新按钮提示标签 =====
+function updateButtonHints(){
+  const curDir = bunny.dir;
+  const leftDir = (curDir + 3) % 4;
+  const rightDir = (curDir + 1) % 4;
+  document.getElementById('hint-left').innerHTML =
+    `转后<span class="arrow">${DIR_ARROWS[leftDir]}</span><span class="dir-name">${DIR_DESC[leftDir]}</span>`;
+  document.getElementById('hint-right').innerHTML =
+    `转后<span class="arrow">${DIR_ARROWS[rightDir]}</span><span class="dir-name">${DIR_DESC[rightDir]}</span>`;
+  document.getElementById('hint-forward').innerHTML =
+    `向<span class="arrow">${DIR_ARROWS[curDir]}</span><span class="dir-name">${DIR_DESC[curDir]}走</span>`;
+}
+
+function updateCompass(){
+  const arrow = document.getElementById('compass-arrow');
+  if(arrow){ arrow.style.transform = `translate(-50%,-100%) rotate(${bunny.dir * 90}deg)`; }
+}
+
+// ===== 教程系统 =====
+function startTutorial(){
+  tutorialStep = 0;
+  showTutorialStep();
+}
+
+function showTutorialStep(){
+  const overlay = document.getElementById('tutorial-overlay');
+  const step = TUTORIAL_STEPS[tutorialStep];
+  if(!step){ overlay.classList.remove('active'); return; }
+
+  const iconEl = document.getElementById('tut-icon');
+  if(step.icon === 'svg'){
+    iconEl.innerHTML = BINGO_SVGS.normal;
+  } else {
+    iconEl.textContent = step.icon;
+  }
+  document.getElementById('tut-title').textContent = step.title;
+  document.getElementById('tut-text').innerHTML = step.text;
+  document.getElementById('tut-btn').textContent = step.btnText;
+
+  const box = document.getElementById('tutorial-box');
+  if(tutorialStep === 0){
+    box.style.top = '50%'; box.style.left = '50%'; box.style.transform = 'translate(-50%,-50%)';
+  } else if(tutorialStep === 1){
+    box.style.top = '12%'; box.style.left = '50%'; box.style.transform = 'translateX(-50%)';
+  } else {
+    box.style.top = '50%'; box.style.left = '50%'; box.style.transform = 'translate(-50%,-50%)';
+  }
+  overlay.classList.add('active');
+}
+
+function nextTutorialStep(){
+  tutorialStep++;
+  if(tutorialStep >= TUTORIAL_STEPS.length){
+    document.getElementById('tutorial-overlay').classList.remove('active');
+  } else {
+    showTutorialStep();
+  }
+}
+
+// ===== 智能提示 =====
+function showSmartHint(){
+  const lv = LEVELS[currentLevel];
+  const dx = lv.goal.x - bunny.x;
+  const dy = lv.goal.y - bunny.y;
+  let goalDir = '';
+  if(dy < 0) goalDir += '上';
+  if(dy > 0) goalDir += '下';
+  if(dx > 0) goalDir += '右';
+  if(dx < 0) goalDir += '左';
+
+  const curDir = bunny.dir;
+  let turnSuggestion = '';
+  let needDir = -1;
+  if(Math.abs(dx) >= Math.abs(dy)){
+    needDir = dx > 0 ? 1 : (dx < 0 ? 3 : (dy > 0 ? 2 : 0));
+  } else {
+    needDir = dy > 0 ? 2 : 0;
+  }
+
+  if(needDir === curDir){
+    turnSuggestion = `宾果现在<b>${DIR_DESC[curDir]}</b>，方向对了！<br>快按<b>【前进】</b>${DIR_ARROWS[curDir]}去找妈妈吧！`;
+  } else {
+    const diff = (needDir - curDir + 4) % 4;
+    if(diff === 1){
+      turnSuggestion = `宾果现在<b>${DIR_DESC[curDir]}</b> ${DIR_ARROWS[curDir]}<br>妈妈在<b>${goalDir}</b>方向<br>按<b>【右转】</b> ↻ 就能转向${DIR_DESC[needDir]} ${DIR_ARROWS[needDir]}！`;
+    } else if(diff === 3){
+      turnSuggestion = `宾果现在<b>${DIR_DESC[curDir]}</b> ${DIR_ARROWS[curDir]}<br>妈妈在<b>${goalDir}</b>方向<br>按<b>【左转】</b> ↺ 就能转向${DIR_DESC[needDir]} ${DIR_ARROWS[needDir]}！`;
+    } else if(diff === 2){
+      turnSuggestion = `宾果现在<b>${DIR_DESC[curDir]}</b> ${DIR_ARROWS[curDir]}<br>妈妈在<b>相反方向</b>，需要转两次！<br>左转两次 ↺↺ 或右转两次 ↻↻ 都可以！`;
+    }
+  }
+
+  let starHint = '';
+  if(totalStars > starsCollected){
+    starHint = `<br><br>🎾 还有 <b>${totalStars - starsCollected}</b> 个网球没捡呢！`;
+  }
+
+  const old = document.querySelector('.smart-hint');
+  if(old) old.remove();
+
+  const hint = document.createElement('div');
+  hint.className = 'smart-hint';
+  hint.innerHTML = `
+    <div class="sh-icon" id="sh-bingo"></div>
+    <div class="sh-title">宾果的提示</div>
+    <div class="sh-text">${turnSuggestion}${starHint}</div>
+    <button class="sh-close" onclick="this.parentElement.remove()">明白了！</button>
+  `;
+  document.body.appendChild(hint);
+  document.getElementById('sh-bingo').innerHTML = BINGO_SVGS.normal;
+  playEncourage();
+}
+
+// ===== 加载关卡 =====
+function loadLevel(idx){
+  currentLevel = idx;
+  const lv = LEVELS[idx];
+  bunny = {x:lv.start.x, y:lv.start.y, dir:lv.start.dir};
+  moves = 0;
+  starsCollected = 0;
+  totalStars = lv.stars.length;
+  trailCells = [];
+  isAnimating = false;
+  bunnyMood = 'normal';
+
+  document.getElementById('level-title').textContent = lv.title;
+  document.getElementById('hint-text').textContent = lv.hint;
+  document.getElementById('move-count').textContent = '0';
+  document.getElementById('star-count').textContent = `0/${totalStars}`;
+
+  renderBoard(lv);
+  renderBunny();
+  updateButtonHints();
+  updateCompass();
+  enableButtons(true);
+
+  setTimeout(()=> showBunnySay(lv.bingoSay, 2500), 500);
+  if(idx === 0){ setTimeout(()=> startTutorial(), 800); }
+}
+
+// ===== 渲染棋盘 =====
+function renderBoard(lv){
+  const board = document.getElementById('board');
+  const cols = lv.grid[0].length;
+  const rows = lv.grid.length;
+  const maxW = Math.min(window.innerWidth - 40, 680);
+  const maxH = window.innerHeight - 340;
+  cellSize = Math.min(62, Math.floor((maxW - 20) / cols), Math.floor((maxH - 20) / rows));
+  cellSize = Math.max(40, cellSize);
+
+  board.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+  board.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+  board.innerHTML = '';
+
+  const decoEmojis = DECO_EMOJIS[lv.decoType] || DECO_EMOJIS.garden;
+
+  for(let r=0; r<rows; r++){
+    for(let c=0; c<cols; c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.id = `cell-${c}-${r}`;
+      cell.style.width = cellSize + 'px';
+      cell.style.height = cellSize + 'px';
+      cell.style.fontSize = (cellSize * 0.55) + 'px';
+
+      if(lv.grid[r][c] === 1){
+        cell.classList.add('wall');
+        cell.textContent = '🌿';
+      } else if(c === lv.goal.x && r === lv.goal.y){
+        cell.classList.add('goal');
+        // 妈妈SVG
+        const mumEl = document.createElement('div');
+        mumEl.style.width = (cellSize * 0.9) + 'px';
+        mumEl.style.height = (cellSize * 0.9) + 'px';
+        mumEl.innerHTML = MUM_SVG;
+        cell.appendChild(mumEl);
+      } else {
+        cell.classList.add('grass');
+        if(Math.random() < 0.25){
+          const deco = document.createElement('span');
+          deco.className = 'deco';
+          deco.textContent = decoEmojis[Math.floor(Math.random() * decoEmojis.length)];
+          deco.style.fontSize = (cellSize * 0.3) + 'px';
+          deco.style.position = 'absolute';
+          deco.style.bottom = (Math.random() * 6) + 'px';
+          deco.style.right = (Math.random() * 6) + 'px';
+          deco.style.animationDelay = (Math.random() * 3) + 's';
+          cell.appendChild(deco);
+        }
+      }
+
+      const star = lv.stars.find(s=>s.x===c && s.y===r);
+      if(star){
+        const starEl = document.createElement('span');
+        starEl.textContent = '🎾';
+        starEl.style.fontSize = (cellSize * 0.5) + 'px';
+        starEl.id = `star-${c}-${r}`;
+        starEl.style.animation = 'bunnyHop 1.5s ease-in-out infinite';
+        cell.appendChild(starEl);
+      }
+
+      board.appendChild(cell);
+    }
+  }
+
+  let bunnyEl = document.getElementById('bunny');
+  if(!bunnyEl){
+    bunnyEl = document.createElement('div');
+    bunnyEl.id = 'bunny';
+    board.appendChild(bunnyEl);
+  } else {
+    board.appendChild(bunnyEl);
+  }
+  bunnyEl.innerHTML = BINGO_SVGS.normal;
+  bunnyEl.style.width = (cellSize - 4) + 'px';
+  bunnyEl.style.height = (cellSize - 4) + 'px';
+}
+
+function setBunnyMood(mood, duration){
+  bunnyMood = mood;
+  const bunnyEl = document.getElementById('bunny');
+  if(!bunnyEl) return;
+  bunnyEl.innerHTML = BINGO_SVGS[mood] || BINGO_SVGS.normal;
+  if(duration){
+    setTimeout(()=>{
+      if(bunnyMood === mood){
+        bunnyMood = 'normal';
+        bunnyEl.innerHTML = BINGO_SVGS.normal;
+      }
+    }, duration);
+  }
+}
+
+function renderBunny(){
+  const bunnyEl = document.getElementById('bunny');
+  if(!bunnyEl) return;
+  const cell = document.getElementById(`cell-${bunny.x}-${bunny.y}`);
+  if(!cell) return;
+  bunnyEl.style.left = (cell.offsetLeft + 2) + 'px';
+  bunnyEl.style.top = (cell.offsetTop + 2) + 'px';
+  bunnyEl.style.transform = `rotate(${bunny.dir * 90}deg)`;
+}
+
+function showBunnySay(text, duration){
+  const board = document.getElementById('board');
+  if(!board) return;
+  const old = document.querySelector('.speech-bubble');
+  if(old) old.remove();
+  const bubble = document.createElement('div');
+  bubble.className = 'speech-bubble';
+  bubble.textContent = text;
+  board.appendChild(bubble);
+  const bunnyEl = document.getElementById('bunny');
+  if(bunnyEl){
+    bubble.style.left = (parseFloat(bunnyEl.style.left) + cellSize/2) + 'px';
+    bubble.style.top = (parseFloat(bunnyEl.style.top) - 38) + 'px';
+    bubble.style.transform = 'translateX(-50%)';
+  }
+  if(duration){
+    setTimeout(()=>{
+      bubble.style.transition = 'opacity .3s';
+      bubble.style.opacity = '0';
+      setTimeout(()=>bubble.remove(), 300);
+    }, duration);
+  }
+}
+
+function showEncourage(text, x, y){
+  const board = document.getElementById('board');
+  if(!board) return;
+  const el = document.createElement('div');
+  el.className = 'encourage';
+  el.textContent = text;
+  el.style.left = (x - 20) + 'px';
+  el.style.top = (y - 30) + 'px';
+  el.style.color = ['#E8731E','#FF9F43','#4A90D9','#5BB85B','#A78BFA'][Math.floor(Math.random()*5)];
+  board.appendChild(el);
+  setTimeout(()=>el.remove(), 1200);
+}
+
+function enableButtons(enabled){
+  document.getElementById('btn-left').disabled = !enabled;
+  document.getElementById('btn-right').disabled = !enabled;
+  document.getElementById('btn-forward').disabled = !enabled;
+}
+
+function doTurn(dir){
+  if(isAnimating) return;
+  initAudio();
+  isAnimating = true;
+  enableButtons(false);
+  if(dir === 'left'){ bunny.dir = (bunny.dir + 3) % 4; }
+  else { bunny.dir = (bunny.dir + 1) % 4; }
+  playTurn();
+  renderBunny();
+  updateButtonHints();
+  updateCompass();
+  if(Math.random() < 0.35){
+    const bunnyEl = document.getElementById('bunny');
+    if(bunnyEl){
+      showEncourage(ENCOURAGES[Math.floor(Math.random()*ENCOURAGES.length)],
+        parseFloat(bunnyEl.style.left) + cellSize/2, parseFloat(bunnyEl.style.top));
+    }
+  }
+  setTimeout(()=>{ isAnimating=false; enableButtons(true); }, 380);
+}
+
+function doForward(){
+  if(isAnimating) return;
+  initAudio();
+  isAnimating = true;
+  enableButtons(false);
+  const lv = LEVELS[currentLevel];
+  let nx = bunny.x, ny = bunny.y;
+  switch(bunny.dir){
+    case 0: ny -= 1; break;
+    case 1: nx += 1; break;
+    case 2: ny += 1; break;
+    case 3: nx -= 1; break;
+  }
+  if(nx < 0 || nx >= lv.grid[0].length || ny < 0 || ny >= lv.grid.length || lv.grid[ny][nx] === 1){
+    playBump();
+    setBunnyMood('dizzy', 1200);
+    shakeBunny();
+    showBunnySay(BUMP_SAYS[Math.floor(Math.random()*BUMP_SAYS.length)], 1500);
+    setTimeout(()=>{ isAnimating=false; enableButtons(true); }, 500);
+    return;
+  }
+  addTrail(bunny.x, bunny.y);
+  bunny.x = nx; bunny.y = ny;
+  moves++;
+  document.getElementById('move-count').textContent = moves;
+  playStep();
+  renderBunny();
+
+  const starIdx = lv.stars.findIndex(s=>s.x===nx && s.y===ny);
+  if(starIdx >= 0){
+    const starEl = document.getElementById(`star-${nx}-${ny}`);
+    if(starEl){
+      starEl.style.transition = 'all .3s';
+      starEl.style.transform = 'scale(2.5) rotate(360deg)';
+      starEl.style.opacity = '0';
+      setTimeout(()=>starEl.remove(), 300);
+    }
+    starsCollected++;
+    document.getElementById('star-count').textContent = `${starsCollected}/${totalStars}`;
+    playStar();
+    setBunnyMood('happy', 1500);
+    showBunnySay(STAR_SAYS[Math.floor(Math.random()*STAR_SAYS.length)], 1500);
+    const bunnyEl = document.getElementById('bunny');
+    if(bunnyEl){
+      showEncourage('+' + (starsCollected * 10) + '分!',
+        parseFloat(bunnyEl.style.left) + cellSize/2, parseFloat(bunnyEl.style.top));
+    }
+    playEncourage();
+  }
+
+  setTimeout(()=>{
+    if(nx === lv.goal.x && ny === lv.goal.y){
+      setBunnyMood('happy');
+      handleWin();
+    } else {
+      if(moves > 0 && moves % 5 === 0 && Math.random() < 0.5){
+        const bunnyEl = document.getElementById('bunny');
+        if(bunnyEl){
+          showEncourage(ENCOURAGES[Math.floor(Math.random()*ENCOURAGES.length)],
+            parseFloat(bunnyEl.style.left) + cellSize/2, parseFloat(bunnyEl.style.top));
+          playEncourage();
+        }
+      }
+      isAnimating = false;
+      enableButtons(true);
+    }
+  }, 420);
+}
+
+function shakeBunny(){
+  const bunnyEl = document.getElementById('bunny');
+  const baseTransform = `rotate(${bunny.dir * 90}deg)`;
+  bunnyEl.style.transition = 'transform .08s';
+  const dirVec = getDirVector(bunny.dir);
+  let i = 0;
+  const shake = setInterval(()=>{
+    i++;
+    if(i > 4){
+      clearInterval(shake);
+      bunnyEl.style.transition = 'left .4s cubic-bezier(.34,1.2,.64,1),top .4s cubic-bezier(.34,1.2,.64,1),transform .35s ease';
+      bunnyEl.style.transform = baseTransform;
+      return;
+    }
+    const offset = i % 2 === 0 ? 4 : -4;
+    bunnyEl.style.transform = `${baseTransform} translate(${dirVec.x * offset}px, ${dirVec.y * offset}px)`;
+  }, 80);
+}
+
+function getDirVector(dir){
+  switch(dir){
+    case 0: return {x:0, y:-1};
+    case 1: return {x:1, y:0};
+    case 2: return {x:0, y:1};
+    case 3: return {x:-1, y:0};
+  }
+}
+
+function addTrail(x, y){
+  const board = document.getElementById('board');
+  const cell = document.getElementById(`cell-${x}-${y}`);
+  if(!cell) return;
+  const trail = document.createElement('div');
+  trail.className = 'trail';
+  const size = cellSize * 0.6;
+  trail.style.width = size + 'px';
+  trail.style.height = size + 'px';
+  trail.style.left = (cell.offsetLeft + (cellSize - size) / 2) + 'px';
+  trail.style.top = (cell.offsetTop + (cellSize - size) / 2) + 'px';
+  board.appendChild(trail);
+  trailCells.push(trail);
+  if(trailCells.length > 25){ const old = trailCells.shift(); old.remove(); }
+}
+
+function handleWin(){
+  playWin();
+  enableButtons(false);
+  const lv = LEVELS[currentLevel];
+  document.getElementById('win-moves').textContent = moves;
+  document.getElementById('win-stars').textContent = `${starsCollected}/${totalStars}`;
+
+  let rateStars = 1;
+  if(moves <= lv.optimalMoves) rateStars = 3;
+  else if(moves <= lv.optimalMoves * 1.4) rateStars = 2;
+
+  const starEls = document.querySelectorAll('#star-rating .rate-star');
+  starEls.forEach((el, i)=>{
+    el.classList.remove('earned');
+    setTimeout(()=>{
+      if(i < rateStars){
+        el.classList.add('earned');
+        playTone(659 + i*200, 0.15, 'sine', 0.12);
+      }
+    }, 300 + i * 300);
+  });
+
+  const stickerPool = ['🌟','🏆','🎾','🌈','⭐','🏅','🎈','🦴','🦋','🌸'];
+  const stickersEl = document.getElementById('stickers');
+  stickersEl.innerHTML = '';
+  for(let i=0; i<rateStars; i++){
+    const s = document.createElement('span');
+    s.className = 'sticker';
+    s.textContent = stickerPool[(currentLevel * 2 + i) % stickerPool.length];
+    s.style.animationDelay = (i * 0.15) + 's';
+    stickersEl.appendChild(s);
+  }
+
+  const isLast = currentLevel >= LEVELS.length - 1;
+  const nextBtn = document.getElementById('next-btn');
+  const rateMsgs = ['不错哦！再试试能不能更少步数！','很好！差一点点就完美了！','完美！你太厉害啦！'];
+  if(isLast){
+    document.getElementById('win-title').textContent = '🏆 全部通关！';
+    document.getElementById('win-msg').textContent = `${rateMsgs[rateStars-1]} 宾果找到妈妈啦，谢谢你！`;
+    nextBtn.textContent = '回到首页 🏠';
+    createRainbow();
+  } else {
+    document.getElementById('win-title').textContent = '🎉 太棒了！';
+    document.getElementById('win-msg').textContent = `${rateMsgs[rateStars-1]} 继续冒险吧！`;
+    nextBtn.textContent = '下一关 →';
+  }
+  createConfetti();
+  setTimeout(()=>{ showScreen('win-screen'); }, 600);
+}
+
+function nextLevel(){
+  if(currentLevel >= LEVELS.length - 1){ showScreen('title-screen'); }
+  else { loadLevel(currentLevel + 1); showScreen('game-screen'); }
+}
+
+function createConfetti(){
+  const colors = ['#E8731E','#FF9F43','#4A90D9','#5BB85B','#FFD93D','#A78BFA'];
+  const app = document.getElementById('app');
+  for(let i=0; i<50; i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDelay = Math.random() * 1.5 + 's';
+    c.style.animationDuration = (2 + Math.random() * 2) + 's';
+    if(Math.random() > 0.5) c.style.borderRadius = '50%';
+    app.appendChild(c);
+    setTimeout(()=>c.remove(), 5000);
+  }
+}
+
+function createRainbow(){
+  const app = document.getElementById('app');
+  const rainbow = document.createElement('div');
+  rainbow.className = 'rainbow';
+  rainbow.innerHTML = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 20 180 A 80 80 0 0 1 180 180" fill="none" stroke="#FF6B6B" stroke-width="10"/>
+    <path d="M 30 180 A 70 70 0 0 1 170 180" fill="none" stroke="#FF9F43" stroke-width="10"/>
+    <path d="M 40 180 A 60 60 0 0 1 160 180" fill="none" stroke="#FFD93D" stroke-width="10"/>
+    <path d="M 50 180 A 50 50 0 0 1 150 180" fill="none" stroke="#5BB85B" stroke-width="10"/>
+    <path d="M 60 180 A 40 40 0 0 1 140 180" fill="none" stroke="#4A90D9" stroke-width="10"/>
+    <path d="M 70 180 A 30 30 0 0 1 130 180" fill="none" stroke="#A78BFA" stroke-width="10"/>
+  </svg>`;
+  app.appendChild(rainbow);
+  setTimeout(()=>rainbow.remove(), 2000);
+}
+
+function showModal(){ document.getElementById('modal-overlay').classList.add('show'); }
+function hideModal(){ document.getElementById('modal-overlay').classList.remove('show'); }
+
+window.addEventListener('resize', ()=>{
+  if(document.getElementById('game-screen').classList.contains('active')){
+    const lv = LEVELS[currentLevel];
+    renderBoard(lv);
+    trailCells.forEach(t=>t.remove());
+    trailCells = [];
+    renderBunny();
+    setBunnyMood(bunnyMood);
+    updateButtonHints();
+    updateCompass();
+  }
+});
+
+document.addEventListener('keydown', e=>{
+  if(!document.getElementById('game-screen').classList.contains('active')) return;
+  if(isAnimating) return;
+  switch(e.key){
+    case 'ArrowLeft': case 'a': case 'A': doTurn('left'); break;
+    case 'ArrowRight': case 'd': case 'D': doTurn('right'); break;
+    case 'ArrowUp': case 'w': case 'W': case ' ': doForward(); break;
+  }
+});
+
+// 初始化标题页宾果图标
+document.getElementById('title-bingo').innerHTML = BINGO_SVGS.normal;
+</script>
+</body>
+</html>
